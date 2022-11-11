@@ -1,0 +1,846 @@
+---
+title: "Analyse de données"
+author: "François Lenne & Ronan Patin"
+date: "12/12/2021"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Partie 1
+
+
+
+## 1) Choix de l'année et importation du data frame
+
+
+```{r}
+ sample(2007:2019,1)
+```
+
+Lorsque nous avons lancé la fonction sample nous avons obtenu l'année 2013
+
+
+
+```{r message=TRUE, warning=TRUE}
+library(readxl)
+library(readr)
+df <- read_delim("C:/Users/franc/OneDrive/Bureau/M1/analyse de données/TD/barometredunumerique-2007-2019-fus.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+
+## 2) et 3) Selection de l'année 2013 et des variables en rapport avec notre problématique
+
+```{r}
+df2 <- df[ (df$annee %in% c("2013")),c("INTER","ABILITY","SEXE", "AGGLO5","DIPL5","PCS8EGO","REVTOT7", "AGE6FUZ","ORDIJOB" )]
+```
+
+
+  Afin d'économiser en code nous avons réalisé la question 2 et 3 simultanément en selectionnant l'année 2013 et en selectionant le numéro d'observation et la question choisie sur l'Habilité de l'individu a utiliser internet
+  
+  
+
+
+
+
+## 4) Sélectionner 95% du data frame
+
+```{r message=TRUE, warning=FALSE, paged.print=FALSE}
+library(dplyr)
+df3 = df2 %>% dplyr::sample_frac(.95)
+```
+
+
+à l'aide de la fonction sample_frac du package dplyr nous gardons au hasard  95% de nos individus
+
+## 5) Importation de la base de donnée "Prenoms"
+
+
+
+
+```{r warning=FALSE}
+Prenoms <- read.csv2("C:/Users/franc/OneDrive/Bureau/M1/analyse de données/TD/Prenoms.csv")
+```
+
+
+
+## Selection dans la base de données des prenoms en fonction du sexe de l'individu et de la fréquence de ce prénom
+
+
+```{r warning=FALSE}
+prenoms_1 <- Prenoms[Prenoms$X04_fréquence>0,]
+library(tidyverse)
+df3$INTER2[df3$SEXE == 1] <- str_to_title(sample(prenoms_1$X01_prenom[prenoms_1$X02_genre=="m"],nrow(df3[df3$SEXE == 1,]),prob=prenoms_1$X04_fréquence[prenoms_1$X02_genre=="m"])) 
+
+df3$INTER2[df3$SEXE == 2] <- str_to_title(sample(prenoms_1$X01_prenom[prenoms_1$X02_genre=="f"],nrow(df3[df3$SEXE == 2,]),prob=prenoms_1$X04_fréquence[prenoms_1$X02_genre=="f"])) 
+
+sum(duplicated(df3$INTER))
+```
+
+
+## 8) Remplacement des numéros de ligne par les prénom que nous avons sélectioner ci-dessus
+
+
+```{r warning=FALSE}
+rownames(df3) = df3$INTER2
+```
+
+
+
+
+
+
+# Partie 2
+
+
+Nous pouvons observer que notre variable Abiliy est au format numérique, ainsi nous utilisons la librairie questionr pour la transformer en facteur ce qui permettra de remplacer les numéros des questions par leurs initulées et ainsi permettre de faciliter l’interprétation et la compréhension de nos statistiques descriptives.
+
+
+## Recodage des variables 
+
+
+### Ability
+
+```{r}
+
+df3$ABILITY_F <- as.character(df3$ABILITY)
+df3$ABILITY_F[df3$ABILITY == "1"] <- "Très compétent"
+df3$ABILITY_F[df3$ABILITY == "2"] <- "Assez compétent"
+df3$ABILITY_F[df3$ABILITY == "3"] <- "Pas très compétent"
+df3$ABILITY_F[df3$ABILITY == "4"] <- "Pas du tout compétent"
+df3$ABILITY_F[df3$ABILITY == "5"] <- "Ne sait pas"
+df3$ABILITY_F <- factor(df3$ABILITY_F)
+
+```
+
+
+### SEXE 
+
+
+```{r}
+
+df3$SEXE_F <- as.character(df3$SEXE)
+df3$SEXE_F[df3$SEXE == "1"] <- "Homme"
+df3$SEXE_F[df3$SEXE == "2"] <- "Femme"
+df3$SEXE_F <- factor(df3$SEXE_F)
+```
+
+
+### AGGLO5
+
+
+```{r}
+## Recodage de df3$AGGLO5 en df3$AGGLO5_F
+df3$AGGLO5_F <- as.character(df3$AGGLO5)
+df3$AGGLO5_F[df3$AGGLO5 == "1"] <- "moins de 2000 habitants"
+df3$AGGLO5_F[df3$AGGLO5 == "2"] <- "de 2000 à 100 000 habitants"
+df3$AGGLO5_F[df3$AGGLO5 == "3"] <- "de 2000 à 100 000 habitants"
+df3$AGGLO5_F[df3$AGGLO5 == "4"] <- "100 000 habitants et plus"
+df3$AGGLO5_F[df3$AGGLO5 == "5"] <- "100 000 habitants et plus"
+df3$AGGLO5_F <- factor(df3$AGGLO5_F)
+```
+
+
+### DIPL5
+
+
+```{r}
+## Recodage de df3$DIPL5 en df3$DIPL5_F
+df3$DIPL5_F <- as.character(df3$DIPL5)
+df3$DIPL5_F[df3$DIPL5 == "1"] <- "Aucun"
+df3$DIPL5_F[df3$DIPL5 == "2"] <- "Bepc"
+df3$DIPL5_F[df3$DIPL5 == "3"] <- "Bac"
+df3$DIPL5_F[df3$DIPL5 == "4"] <- "Diplôme du supérieur"
+df3$DIPL5_F[df3$DIPL5 == "5"] <- "Aucun"
+df3$DIPL5_F <- factor(df3$DIPL5_F)
+```
+
+
+
+### PCS8EGO
+
+
+
+```{r}
+
+
+df3$PCS8EGO_F <- as.character(df3$PCS8EGO)
+df3$PCS8EGO_F[df3$PCS8EGO == "1"] <- "Independant"
+df3$PCS8EGO_F[df3$PCS8EGO == "2"] <- "Cadre supérieur"
+df3$PCS8EGO_F[df3$PCS8EGO == "3"] <- "Profession intermédiaire"
+df3$PCS8EGO_F[df3$PCS8EGO == "4"] <- "Employé"
+df3$PCS8EGO_F[df3$PCS8EGO == "5"] <- "Ouvrier"
+df3$PCS8EGO_F[df3$PCS8EGO == "6"] <- "Reste au foyer"
+df3$PCS8EGO_F[df3$PCS8EGO == "7"] <- "Retraite"
+df3$PCS8EGO_F[df3$PCS8EGO == "8"] <- "Eleve/Etudiant"
+df3$PCS8EGO_F <- factor(df3$PCS8EGO_F)
+
+
+```
+
+
+
+### REVTOT7_F
+
+```{r}
+
+## Recodage de df3$REVTOT7 en df3$REVTOT7_F
+df3$REVTOT7_F <- as.character(df3$REVTOT7)
+df3$REVTOT7_F[df3$REVTOT7 == "1"] <- "moins de 1499"
+df3$REVTOT7_F[df3$REVTOT7 == "2"] <- "moins de 1499"
+df3$REVTOT7_F[df3$REVTOT7 == "3"] <- "de 1500 à 2299"
+df3$REVTOT7_F[df3$REVTOT7 == "4"] <- "de 2300 à 3099"
+df3$REVTOT7_F[df3$REVTOT7 == "5"] <- "de 3100 à 3999"
+df3$REVTOT7_F[df3$REVTOT7 == "6"] <- "4100 et plus"
+df3$REVTOT7_F[df3$REVTOT7 == "7"] <- "Ne sait pas"
+
+
+
+
+```
+
+
+### AGE6FUZ
+
+```{r}
+## Recodage de df2$AGE6FUZ en df2$AGE6FUZ_rec
+df3$AGE6FUZ_F <- as.character(df3$AGE6FUZ)
+df3$AGE6FUZ_F[df3$AGE6FUZ == "1"] <- "12-24 ans"
+df3$AGE6FUZ_F[df3$AGE6FUZ == "2"] <- "12-24 ans"
+df3$AGE6FUZ_F[df3$AGE6FUZ == "3"] <- "25-39 ans"
+df3$AGE6FUZ_F[df3$AGE6FUZ == "4"] <- "40-59 ans"
+df3$AGE6FUZ_F[df3$AGE6FUZ == "5"] <- "60 et plus"
+df3$AGE6FUZ_F[df3$AGE6FUZ == "6"] <- "60 et plus"
+df3$AGE6FUZ_F <- factor(df3$AGE6FUZ_F)
+
+
+
+```
+
+
+
+### Ordijob
+
+
+
+```{r}
+## Recodage de df3$ORDIJOB en df3$ORDIJOB_F
+df3$ORDIJOB_F <- as.character(df3$ORDIJOB)
+df3$ORDIJOB_F[df3$ORDIJOB == "1"] <- "Oui"
+df3$ORDIJOB_F[df3$ORDIJOB == "2"] <- "Non"
+df3$ORDIJOB_F[df3$ORDIJOB == "3"] <- "Ne sait pas"
+df3$ORDIJOB_F[df3$ORDIJOB == "99"] <- "Ne sait pas"
+df3$ORDIJOB_F <- factor(df3$ORDIJOB_F)
+
+```
+
+
+
+
+```{r}
+df3_g = df3
+```
+
+
+
+# Statistiques descriptives 
+
+
+## Librairie utilisé 
+
+
+```{r}
+library(plotly)
+library(ggplot2)
+```
+
+
+## Habilité
+
+
+
+```{r}
+ AB = ggplot(df3) +
+  aes(x = ABILITY_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur habilité à utiliser un ordinateur") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(AB) 
+ 
+ AB
+  
+```
+
+
+
+## SEXE
+
+
+```{r}
+
+
+sexe= ggplot(df3) +
+  aes(x = SEXE_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur sexe") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(sexe) 
+
+```
+
+
+
+
+
+## AGE
+
+### Graphique avant regroupement des modalités
+
+```{r}
+df3_g$AGE6FUZ_F2 <- as.character(df3$AGE6FUZ)
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "1"] <- "12-17 ans"
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "2"] <- "17-24 ans"
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "3"] <- "25-39 ans"
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "4"] <- "40-59 ans"
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "5"] <- "60-69 ans"
+df3_g$AGE6FUZ_F2[df3$AGE6FUZ == "6"] <- "70 ans et plus"
+df3_g$AGE6FUZ_F2 <- factor(df3_g$AGE6FUZ_F2)
+
+```
+
+
+```{r}
+
+AGE= ggplot(df3_g) +
+  aes(x = AGE6FUZ_F2) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur âge") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(AGE) 
+
+
+```
+
+
+### Après regroupement des variables
+
+```{r}
+
+AGE2= ggplot(df3) +
+  aes(x = AGE6FUZ_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur âge") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(AGE2) 
+
+
+```
+
+
+
+## Aglomération
+
+
+### Avant le regroupement des modalités
+
+
+```{r}
+df3_g$AGGLO5_F2 <- as.character(df3$AGGLO5)
+df3_g$AGGLO5_F2[df3$AGGLO5 == "1"] <- "moins de 2000 habitants"
+df3_g$AGGLO5_F2[df3$AGGLO5 == "2"] <- "de 2000 à 100 000 habitants"
+df3_g$AGGLO5_F2[df3$AGGLO5 == "3"] <- "de 2000 à 100 000 habitants"
+df3_g$AGGLO5_F2[df3$AGGLO5 == "4"] <- "100 000 habitants et plus"
+df3_g$AGGLO5_F2[df3$AGGLO5 == "5"] <- "Paris et agglomération parisienne"
+df3_g$AGGLO5_F2 <- factor(df3_g$AGGLO5_F2)
+```
+
+
+```{r}
+aglo= ggplot(df3_g) +
+  aes(x = AGGLO5_F2) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de la taille d'agglomération") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(aglo) 
+
+```
+
+
+
+### Après regroupement des modalités
+
+```{r}
+
+aglo2= ggplot(df3) +
+  aes(x = AGGLO5_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de la taille d'agglomération") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(aglo2) 
+
+
+```
+
+
+
+## PCS
+
+
+```{r}
+
+PCS = ggplot(df3) +
+  aes(x = PCS8EGO_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur PCS") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(PCS)
+
+```
+
+
+
+## Revenue
+
+### Avant regroupement de modalité
+
+
+```{r message=FALSE, warning=FALSE}
+df3_g$REVTOT7_F2 <- as.character(df3$REVTOT7)
+df3_g$REVTOT7_F2[df3$REVTOT7 == "1"] <- "moins de 900"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "2"] <- "de 900 à 1499"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "3"] <- "de 1500 à 2299"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "4"] <- "de 2300 à 3099"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "5"] <- "de 3100 à 3999"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "6"] <- "4100 et plus"
+df3_g$REVTOT7_F2[df3$REVTOT7 == "7"] <- "Ne sait pas"
+```
+
+
+```{r}
+
+revenue = ggplot(df3_g) +
+  aes(x = REVTOT7_F2) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Répartion des individus en fonction de leurs revenus") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(revenue) 
+
+```
+
+### Après le regoupement de modalité 
+
+```{r}
+
+revenue2 = ggplot(df3) +
+  aes(x = REVTOT7_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leurs revenus") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(revenue2) 
+ 
+
+```
+
+## Diplome 
+
+
+```{r}
+Dip= ggplot(df3) +
+  aes(x = DIPL5_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur diplôme") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(Dip)
+ 
+```
+
+
+## Ordijob
+
+
+```{r}
+ordijob= ggplot(df3) +
+  aes(x = ORDIJOB_F) +
+  geom_bar(fill = "#FF6666") + 
+  labs(x = "réponses", y= "Nombre d'individus" , title = "Nombre d'individus en fonction de leur utilisation d'un ordinateur dans leur travail") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+ ggplotly(ordijob)
+ 
+
+```
+
+
+
+
+## Suppression des observations trop rare 
+
+
+
+```{r}
+
+df4 = df3[-which(df3$ABILITY_F == "Ne sait pas"),]
+
+df4 = df4[-which(df4$REVTOT7_F == "Ne sait pas"),]
+
+df4 = df4[-which(df4$ORDIJOB_F == "Ne sait pas"),]
+
+```
+
+
+
+
+
+
+## Habilité/Sexe
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(dplyr)
+
+
+freq = df4 %>%
+  group_by(ABILITY_F,SEXE_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq$freq = round(freq$freq * 100)
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+AB_SEXE = ggplot(data=freq, aes(x=ABILITY_F, y=freq, fill=SEXE_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur ", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction du sexe")+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+zzzzz = AB_SEXE + labs(fill = "Sexe")
+
+ggplotly(zzzzz)
+
+```
+
+
+## Habilité/Agglomération
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(dplyr)
+
+
+freq2 = df4 %>%
+  group_by(ABILITY_F,AGGLO5_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq2$freq = round(freq2$freq * 100)
+
+```
+
+
+```{r}
+
+AB_AGGLO = ggplot(data=freq2, aes(x=ABILITY_F, y=freq, fill=AGGLO5_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction de la taille d'agglomération") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+zzzz = AB_AGGLO + labs(fill = "Taille Agglomération")
+
+ggplotly(zzzz)
+
+
+```
+
+
+## Habilité/diplome
+
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(tidyverse)
+
+
+freq3 = df4 %>%
+  group_by(ABILITY_F,DIPL5_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq3$freq = round(freq3$freq * 100)
+
+```
+
+
+```{r}
+
+AB_DIPL = ggplot(data=freq3, aes(x=ABILITY_F, y=freq, fill=DIPL5_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur ", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction du diplôme") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+
+zzz = AB_DIPL + labs(fill = "Diplôme")
+
+ggplotly(zzz)
+
+```
+
+
+
+## Habilité / PCS
+
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+ library(tidyverse)
+
+
+freq4 = df4 %>%
+  group_by(ABILITY_F,PCS8EGO_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq4$freq = round(freq4$freq * 100)
+
+```
+
+
+```{r}
+
+AB_PCS = ggplot(data=freq4, aes(x=ABILITY_F, y=freq, fill=PCS8EGO_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur ", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction de la PCS ") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+
+zz = AB_PCS + labs(fill = "PCS")
+
+ggplotly(zz)
+
+
+```
+
+
+
+## Habilité/ Revenue
+
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+ library(tidyverse)
+
+
+freq5 = df4 %>%
+  group_by(ABILITY_F,REVTOT7_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq5$freq = round(freq5$freq * 100)
+ 
+
+```
+
+
+```{r}
+
+AB_REV = ggplot(data=freq5, aes(x=ABILITY_F, y=freq, fill=REVTOT7_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur ", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction du revenue ") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+z = AB_REV + labs(fill = "Revenue")
+
+ggplotly(z)
+
+
+```
+
+## Habilité/ Ordijob
+
+
+```{r message=FALSE, warning=FALSE}
+
+ library(tidyverse)
+
+
+freq6 = df4 %>%
+  group_by(ABILITY_F,ORDIJOB_F) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
+freq6$freq = round(freq6$freq * 100)
+ 
+
+```
+
+
+```{r}
+
+AB_ORDI = ggplot(data=freq6, aes(x=ABILITY_F, y=freq, fill=ORDIJOB_F)) +
+  geom_bar(stat="identity") +
+ labs(x = "Habilité à utiliser un ordinateur ", y = "Part d'individu", title = "Habilité à utiliser un ordinateur en fonction de son utilisation au travail") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+k = AB_ORDI + labs(fill = "Ordinateur au travail")
+
+ggplotly(k)
+
+k
+
+
+```
+
+# L'ACM
+
+
+## Choix des variables
+
+```{r}
+df5 = df4[,-c(1,2,3,4,5,6,7,8,9,10,12,13,16,18)]
+```
+
+
+
+
+
+## Librairie utilisées 
+
+
+
+```{r message=FALSE, warning=FALSE}
+
+library(FactoMineR)
+library(factoextra)
+
+
+```
+
+
+
+## Corrélation des variables avec les axes  
+
+```{r}
+MCA(df5, ncp = 5)
+```
+
+## Lancement de la MCA
+
+```{r}
+res.mca <- MCA (df5, graph = FALSE)
+print(res.mca)
+
+df6 = df5
+
+df6$revenue = df4$REVTOT7_F
+
+df6$ordijob = df4$ORDIJOB_F
+
+res.mc = MCA(df6, quali.sup=c(5,6), graph=T)
+```
+
+
+
+
+## Pourcentage de la variance expliquée
+
+
+```{r}
+fviz_screeplot (res.mc, addlabels = TRUE, ylim = c (0,16))
+```
+
+
+## Qualité de représentation des variables 
+
+```{r}
+fviz_mca_var(res.mc, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE, 
+             ggtheme = theme_minimal())
+```
+
+
+
+
+## Contribution des variables  aux axes 
+
+
+### Contribution à l'axe 1 
+
+
+
+```{r}
+
+fviz_contrib (res.mca, choice = "var", axes = 1, top = 15)
+
+```
+
+### Contribution à l'axe 2
+
+```{r}
+
+fviz_contrib (res.mca, choice = "var", axes = 2, top = 15)
+```
+
+
+## MCA des individus en fonction de leur Habilité à utiliser internet
+
+
+```{r}
+fviz_mca_ind(res.mca,
+             geom.ind = "point", # Montre les points seulement (mais pas le "text")
+             col.ind = df6$ABILITY_F, # colorer by groups
+             palette = c("#00AFBB", "#E7B800", "#FC4E07", "#AF34F2" ),
+             addEllipses = TRUE, # Ellipses de concentration
+             legend.title = "Groups"
+             )
+```
+
+
+
+
